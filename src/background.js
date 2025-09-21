@@ -1,21 +1,21 @@
-function rewriteHeader(details) {
-    for (let header of details.responseHeaders) {
-        const headerName = header.name.toLowerCase();
-        const headerValue = header.value.toLowerCase();
+// function rewriteHeader(details) {
+//     for (let header of details.responseHeaders) {
+//         const headerName = header.name.toLowerCase();
+//         const headerValue = header.value.toLowerCase();
 
-        if (headerName === 'content-disposition' && headerValue.startsWith('attachment')) {
-            header.value = 'inline' + header.value.substring('attachment'.length);
-            break;
-        }
-    }
-    return { responseHeaders: details.responseHeaders };
-}
+//         if (headerName === 'content-disposition' && headerValue.startsWith('attachment')) {
+//             header.value = 'inline' + header.value.substring('attachment'.length);
+//             break;
+//         }
+//     }
+//     return { responseHeaders: details.responseHeaders };
+// }
 
-browser.webRequest.onHeadersReceived.addListener(
-    rewriteHeader,
-    { urls: ["<all_urls>"] },
-    ["blocking", "responseHeaders"]
-);
+// browser.webRequest.onHeadersReceived.addListener(
+//     rewriteHeader,
+//     { urls: ["<all_urls>"] },
+//     ["blocking", "responseHeaders"]
+// );
 
 // webリクエストが完了したときに発火するリスナー
 browser.webRequest.onCompleted.addListener(
@@ -29,9 +29,11 @@ browser.webRequest.onCompleted.addListener(
             }).then(hasPermission => {
 
                 // 権限がある場合のみcontent_script.jsを注入
+                // V3
                 if (hasPermission) {
-                    browser.tabs.executeScript(details.tabId, {
-                        file: "content_script.js"
+                    browser.scripting.executeScript({
+                        target: { tabId: details.tabId },
+                        files: ["content_script.js"]
                     });
                 }
             });
