@@ -22,5 +22,11 @@
     },
     "icons": {
         "48": "icon.png"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "force-content-previewer@example.com",
+            "data_collection_permissions": false
+        }
     }
 }
