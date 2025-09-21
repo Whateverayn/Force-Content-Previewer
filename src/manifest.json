@@ -6,17 +6,19 @@
     "permissions": [
         "storage",
         "declarativeNetRequest",
-        "scripting"
+        "scripting",
+        "webRequest"
     ],
     "optional_host_permissions": [
         "*://*/*"
     ],
     "background": {
-        "service_worker": "background.js"
+        "scripts": [
+            "background.js"
+        ]
     },
     "options_ui": {
-        "page": "options.html",
-        "browser_style": true
+        "page": "options.html"
     },
     "icons": {
         "48": "icon.png"
