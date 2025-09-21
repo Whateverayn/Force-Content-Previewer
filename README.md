@@ -50,3 +50,6 @@ This add-on requests the minimum permissions necessary to function:
 - **`scripting`**: Used to remove the `download` attribute from links on pages you have approved.
 - **`webRequest`**: Used to detect when a page has finished loading to know when to run a script.
 - **`optional_host_permissions`**: Used to **request your permission at runtime** for the sites you add. The add-on has no access to any websites when you first install it.
+
+# Disclaimer
+This software is provided "as is", without warranty of any kind. Use at your own risk. The author is not responsible for any damage or loss resulting from the use of this software.
