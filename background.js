@@ -1,23 +1,32 @@
+console.log('Background script loaded successfully.'); // スクリプト起動確認用
+
 function rewriteHeader(details) {
-  // manifest.jsonとユーザーの許可設定により、このリスナーは
-  // 許可されたドメインの通信に対してのみ発火する。
+  // --- デバッグ用ログ ---
+  console.log(`[EVENT FIRED] URL: ${details.url}`);
+  console.log('[HEADERS RECEIVED]', details.responseHeaders);
 
   for (let header of details.responseHeaders) {
-    if (header.name.toLowerCase() === 'content-disposition') {
-      if (header.value.toLowerCase().startsWith('attachment')) {
-        console.log(`Rewriting header for: ${details.url}`);
-        // 'attachment' を 'inline' に書き換える
-        header.value = 'inline' + header.value.substring('attachment'.length);
-      }
+    const headerName = header.name.toLowerCase();
+    const headerValue = header.value.toLowerCase();
+
+    if (headerName === 'content-disposition' && headerValue.startsWith('attachment')) {
+      // --- デバッグ用ログ ---
+      console.log(`[ACTION] Found 'Content-Disposition: attachment'. Rewriting to 'inline'.`);
+      
+      header.value = 'inline' + header.value.substring('attachment'.length);
+      
+      // --- デバッグ用ログ ---
+      console.log(`[RESULT] Header modified. New value: ${header.value}`);
       break;
     }
   }
   return { responseHeaders: details.responseHeaders };
 }
 
-// 通信ヘッダーを受け取った時にリスナーを発火
 browser.webRequest.onHeadersReceived.addListener(
   rewriteHeader,
   { urls: ["<all_urls>"] },
   ["blocking", "responseHeaders"]
 );
+
+console.log('webRequest listener has been added.'); // リスナー登録確認用
