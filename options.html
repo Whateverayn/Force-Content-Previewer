@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            width: 400px;
+        }
+
+        #new-permission {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        #new-permission input {
+            flex-grow: 1;
+        }
+
+        #permitted-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>許可されたドメイン</h3>
+    <ul id="permitted-list"></ul>
+    <hr>
+    <h3>新しいドメインの権限を追加</h3>
+    <div id="new-permission">
+        <input type="text" id="new-origin" placeholder="*://*.example.com/*">
+        <button id="add">追加</button>
+    </div>
+    <p id="status"></p>
+
+    <script src="options.js"></script>
+</body>
+
+</html>

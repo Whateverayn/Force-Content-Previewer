@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "name": "Force Content Previewer",
+  "version": "1.1",
+  "description": "Prevents forced downloads on specified domains and tries to preview content in-browser.",
+
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "storage"
+  ],
+
+  "optional_permissions": [
+    "<all_urls>"
+  ],
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "options_ui": {
+    "page": "options.html",
+    "browser_style": true
+  },
+
+  "icons": {
+    "48": "icon.png"
+  }
+}
