@@ -20,6 +20,7 @@
     "options_ui": {
         "page": "options.html"
     },
+    "action": {},
     "icons": {
         "48": "icon.png"
     },

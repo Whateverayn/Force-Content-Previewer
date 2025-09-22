@@ -55,3 +55,42 @@ browser.webRequest.onCompleted.addListener(
         urls: ["<all_urls>"]
     }
 );
+
+// 状態のキー
+const STATE_KEY = 'enabled';
+
+// アドオン起動時に状態を初期化・バッジを更新する関数
+async function initializeState() {
+    const data = await browser.storage.local.get(STATE_KEY);
+    // 保存された値がなければ、デフォルトで有効(true)にする
+    const currentState = typeof data.enabled === 'undefined' ? true : data.enabled;
+    await browser.storage.local.set({ [STATE_KEY]: currentState });
+    updateBadge(currentState);
+}
+
+// バッジの表示を更新する関数
+function updateBadge(isEnabled) {
+    if (isEnabled) {
+        // 有効な場合はバッジを消す
+        browser.action.setBadgeText({ text: '' });
+    } else {
+        // 無効な場合は "OFF" と表示
+        browser.action.setBadgeText({ text: 'OFF' });
+        browser.action.setBadgeBackgroundColor({ color: '#F33' });
+    }
+}
+
+// アイコンがクリックされたときの処理
+browser.action.onClicked.addListener(async (tab) => {
+    // 現在の状態を取得
+    const data = await browser.storage.local.get(STATE_KEY);
+    // 状態を反転させる
+    const newState = !data.enabled;
+    // 新しい状態を保存
+    await browser.storage.local.set({ [STATE_KEY]: newState });
+    // バッジ表示を更新
+    updateBadge(newState);
+});
+
+// 起動時に初期化処理を実行
+initializeState();
