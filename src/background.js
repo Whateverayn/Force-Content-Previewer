@@ -58,6 +58,7 @@ browser.webRequest.onCompleted.addListener(
 
 // 状態のキー
 const STATE_KEY = 'enabled';
+const RULE_ID_PREFIX = 'rule_id_for_'; // options.jsと共有
 
 // アドオン起動時に状態を初期化・バッジを更新する関数
 async function initializeState() {
@@ -66,6 +67,11 @@ async function initializeState() {
     const currentState = typeof data.enabled === 'undefined' ? true : data.enabled;
     await browser.storage.local.set({ [STATE_KEY]: currentState });
     updateBadge(currentState);
+
+    // 起動時にONだったら、ルールを再登録する
+    if (currentState) {
+        await registerAllRules();
+    }
 }
 
 // バッジの表示を更新する関数
@@ -80,6 +86,65 @@ function updateBadge(isEnabled) {
     }
 }
 
+// 現在許可されている全てのドメインルールを再登録する関数
+async function registerAllRules() {
+    // 既存のルールを一度全て削除
+    const existingRules = await browser.declarativeNetRequest.getDynamicRules();
+    const ruleIdsToRemove = existingRules.map(rule => rule.id);
+    if (ruleIdsToRemove.length > 0) {
+        await browser.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: ruleIdsToRemove
+        });
+    }
+
+    // ストレージから、options.jsで保存したルール定義を取得
+    const items = await browser.storage.local.get(null); // 全てのデータを取得
+    const rulesToAdd = [];
+
+    for (const key in items) {
+        if (key.startsWith(RULE_ID_PREFIX)) {
+            const origin = key.substring(RULE_ID_PREFIX.length);
+            const domain = origin.split('://')[1].split('/')[0].replace('*.', '');
+
+            rulesToAdd.push({
+                id: items[key], // 保存されているIDを使用
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{
+                        header: 'Content-Disposition',
+                        operation: 'set',
+                        value: 'inline'
+                    }]
+                },
+                condition: {
+                    requestDomains: [domain],
+                    resourceTypes: ["main_frame", "sub_frame"]
+                }
+            });
+        }
+    }
+
+    if (rulesToAdd.length > 0) {
+        await browser.declarativeNetRequest.updateDynamicRules({
+            addRules: rulesToAdd
+        });
+        console.log(`${rulesToAdd.length}件のルールを再登録しました。`);
+    }
+}
+
+// 全ての動的ルールを削除する関数
+async function removeAllRules() {
+    const existingRules = await browser.declarativeNetRequest.getDynamicRules();
+    const ruleIdsToRemove = existingRules.map(rule => rule.id);
+    if (ruleIdsToRemove.length > 0) {
+        await browser.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: ruleIdsToRemove
+        });
+        console.log(`${ruleIdsToRemove.length}件のルールを削除しました。`);
+    }
+}
+
 // アイコンがクリックされたときの処理
 browser.action.onClicked.addListener(async (tab) => {
     // 現在の状態を取得
@@ -90,6 +155,13 @@ browser.action.onClicked.addListener(async (tab) => {
     await browser.storage.local.set({ [STATE_KEY]: newState });
     // バッジ表示を更新
     updateBadge(newState);
+
+    // 状態に応じてルールの有効/無効を切り替える
+    if (newState) {
+        await registerAllRules(); // ONになったらルールを再登録
+    } else {
+        await removeAllRules(); // OFFになったらルールを全削除
+    }
 });
 
 // 起動時に初期化処理を実行
