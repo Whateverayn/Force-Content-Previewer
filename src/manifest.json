@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Force Content Previewer",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Prevents forced downloads on specified domains and tries to preview content in-browser.",
     "permissions": [
         "storage",
@@ -20,8 +20,9 @@
     "options_ui": {
         "page": "options.html"
     },
+    "action": {},
     "icons": {
-        "48": "icon.png"
+        "48": "icon.svg"
     },
     "browser_specific_settings": {
         "gecko": {
