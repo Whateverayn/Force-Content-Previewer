@@ -52,30 +52,36 @@ addButton.addEventListener('click', async () => {
         const granted = await browser.permissions.request({ origins: [newOrigin] });
 
         if (granted) {
-            // ★ declarativeNetRequest のルールを追加 ★
-            const newRuleId = Math.floor(Math.random() * 100000); // シンプルなID生成
-            const domain = newOrigin.split('://')[1].split('/')[0].replace('*.', '');
+            const newRuleId = Date.now();
+
+            // 現在のオン・オフ状態を確認
+            const state = await browser.storage.local.get('enabled');
+            const isEnabled = state.enabled ?? true; // 未設定ならtrue
+
+            if (isEnabled) {
+                const domain = newOrigin.split('://')[1].split('/')[0].replace('*.', '');
+
+                await browser.declarativeNetRequest.updateDynamicRules({
+                    addRules: [{
+                        id: newRuleId,
+                        priority: 1,
+                        action: {
+                            type: 'modifyHeaders',
+                            responseHeaders: [{
+                                header: 'Content-Disposition',
+                                operation: 'set',
+                                value: 'inline'
+                            }]
+                        },
+                        condition: {
+                            requestDomains: [domain],
+                            resourceTypes: ["main_frame", "sub_frame"]
+                        }
+                    }]
+                });
+            }
             
-            await browser.declarativeNetRequest.updateDynamicRules({
-                addRules: [{
-                    id: newRuleId,
-                    priority: 1,
-                    action: {
-                        type: 'modifyHeaders',
-                        responseHeaders: [{
-                            header: 'Content-Disposition',
-                            operation: 'set',
-                            value: 'inline'
-                        }]
-                    },
-                    condition: {
-                        requestDomains: [domain],
-                        resourceTypes: ["main_frame", "sub_frame"]
-                    }
-                }]
-            });
-            
-            // ★ 作成したルールIDを保存 ★
+            // 作成したルールIDを保存
             await browser.storage.local.set({ [RULE_ID_PREFIX + newOrigin]: newRuleId });
 
             statusElement.textContent = `「${newOrigin}」への権限が許可されました。`;
