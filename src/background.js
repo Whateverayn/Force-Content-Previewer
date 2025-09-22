@@ -73,7 +73,8 @@ async function initializeState() {
     // 保存された値がなければ、デフォルトで有効(true)にする
     const currentState = typeof data.enabled === 'undefined' ? true : data.enabled;
     await browser.storage.local.set({ [STATE_KEY]: currentState });
-    updateBadge(currentState);
+    // updateBadge(currentState);
+    updateIcon();
 
     // 起動時にONだったら、ルールを再登録する
     if (currentState) {
@@ -83,13 +84,55 @@ async function initializeState() {
 
 // バッジの表示を更新する関数
 function updateBadge(isEnabled) {
-    if (isEnabled) {
-        // 有効な場合はバッジを消す
-        browser.action.setBadgeText({ text: '' });
-    } else {
-        // 無効な場合は "OFF" と表示
+    // if (isEnabled) {
+    //     // 有効な場合はバッジを消す
+    //     browser.action.setBadgeText({ text: '' });
+    // } else {
+    //     // 無効な場合は "OFF" と表示
+    //     browser.action.setBadgeText({ text: 'OFF' });
+    //     browser.action.setBadgeBackgroundColor({ color: '#F33' });
+    // }
+    console.warn('updateIcon() を呼び出します. updateBadge() は非推奨です.');
+    updateIcon();
+}
+
+// アイコンの表示を、アドオンの状態と現在のタブに応じて更新する関数
+async function updateIcon() {
+    const stateData = await browser.storage.local.get('enabled');
+    const isEnabled = stateData.enabled ?? true;
+
+    // 1. 最優先：アドオンがオフの場合
+    if (!isEnabled) {
         browser.action.setBadgeText({ text: 'OFF' });
-        browser.action.setBadgeBackgroundColor({ color: '#F33' });
+        browser.action.setBadgeBackgroundColor({ color: '#6e6e6e' });
+        return; // ここで処理を終了
+    }
+
+    // 2. アドオンがオンの場合：アクティブなタブをチェック
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tabs.length === 0) {
+        browser.action.setBadgeText({ text: '' }); // タブがなければバッジを消す
+        return;
+    }
+
+    const currentTab = tabs[0];
+    // URLがない、またはhttp/httpsでない場合は権限チェックできないので終了
+    if (!currentTab.url || !currentTab.url.startsWith('http')) {
+        browser.action.setBadgeText({ text: '' });
+        return;
+    }
+
+    const hasPermission = await browser.permissions.contains({
+        origins: [currentTab.url]
+    });
+
+    if (hasPermission) {
+        // 権限があれば緑の点を表示
+        browser.action.setBadgeText({ text: ' ' }); // 半角スペース
+        browser.action.setBadgeBackgroundColor({ color: '#4CAF50' }); // 緑色
+    } else {
+        // 権限がなければバッジを消す
+        browser.action.setBadgeText({ text: '' });
     }
 }
 
@@ -161,7 +204,8 @@ browser.action.onClicked.addListener(async (tab) => {
     // 新しい状態を保存
     await browser.storage.local.set({ [STATE_KEY]: newState });
     // バッジ表示を更新
-    updateBadge(newState);
+    // updateBadge(newState);
+    updateIcon();
 
     // 状態に応じてルールの有効/無効を切り替える
     if (newState) {
@@ -206,3 +250,8 @@ browser.action.onClicked.addListener(async (tab) => {
 
 // 起動時に初期化処理を実行
 initializeState();
+
+// タブの切り替え、更新、ウィンドウの変更時にアイコン表示を更新する
+browser.tabs.onActivated.addListener(updateIcon);
+browser.tabs.onUpdated.addListener(updateIcon);
+browser.windows.onFocusChanged.addListener(updateIcon);

@@ -22,7 +22,7 @@
     },
     "action": {},
     "icons": {
-        "48": "icon.png"
+        "48": "icon.svg"
     },
     "browser_specific_settings": {
         "gecko": {
