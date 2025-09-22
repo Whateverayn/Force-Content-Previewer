@@ -20,6 +20,13 @@
 // webリクエストが完了したときに発火するリスナー
 browser.webRequest.onCompleted.addListener(
     async (details) => {
+        // 0. アドオンが有効かチェック
+        const state = await browser.storage.local.get('enabled');
+        // enabledがfalseの場合(オフの場合)、何もしない
+        if (state.enabled === false) {
+            return;
+        }
+
         // 1. 最低限のチェック：メインフレームで、URLがHTTP/HTTPSであること
         if (details.type !== "main_frame" || !details.url.startsWith('http')) {
             return;
@@ -158,8 +165,41 @@ browser.action.onClicked.addListener(async (tab) => {
 
     // 状態に応じてルールの有効/無効を切り替える
     if (newState) {
+        // --- アドオンがONになった時の処理 ---
         await registerAllRules(); // ONになったらルールを再登録
+
+        // 開いているタブにコンテンツスクリプトを注入する
+        try {
+            const tabs = await browser.tabs.query({
+                url: ["http://*/*", "https://*/*"] // httpとhttpsのURLを持つタブのみ対象
+            });
+
+            for (const tab of tabs) {
+                // タブごとに権限を確認
+                const hasPermission = await browser.permissions.contains({
+                    origins: [tab.url]
+                });
+
+                if (hasPermission) {
+                    // 権限があればスクリプトを注入
+                    try {
+                        await browser.scripting.executeScript({
+                            target: { tabId: tab.id },
+                            files: ["content_script.js"]
+                        });
+                    } catch (e) {
+                        console.log(
+                            `スクリプトを注入できませんでした。保護されたページかもしれません: ${tab.url}`,
+                            e
+                        );
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("タブへのスクリプト注入中にエラーが発生しました:", e);
+        }
     } else {
+        // --- アドオンがOFFになった時の処理 ---
         await removeAllRules(); // OFFになったらルールを全削除
     }
 });
